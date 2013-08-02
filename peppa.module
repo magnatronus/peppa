@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * @file
+ * 
+ * "Peppa" is a module that provides REST API integration into Drupal and provides a 'Parse' like set of functions.
+ * Basically with Peppa set up you can control access to external applications (i.e. mobile apps) based on Drupal users
+ * and persist JSON objects.
+ * 
+ * API modified so now we have V1 and V2
+ * V1 - original REST API
+ * V2 - modified so that Titaniun Sync Adapter will work as Well As standard REST
+ *
+ * @author: Stephen Rogers (srogers.uk@gmail.com) - www.spiralarm.co.uk @sarmcon
+ * 
+ * This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License.
+ * http://creativecommons.org/licenses/by-nc/3.0
+ * 
+ */
+ 
+// Includes
+require_once(drupal_get_path('module','peppa').'/peppa.permissions.inc');
+require_once(drupal_get_path('module','peppa').'/peppa.data.inc');
+ 
+   
+ 
+ /**
+  * Implement hook_menu()
+  */
+function peppa_menu(){
+	
+	// This is the site V1 API endpoint
+	$items['peppa/api/1'] = array(
+		'page callback' => 'peppa_api_request_v1',
+		'access arguments' => array('peppa api'),
+		'type' => MENU_CALLBACK
+	);
+	
+	// This is the site V2 API endpoint
+	$items['peppa/api/2'] = array(
+		'page callback' => 'peppa_api_request_v2',
+		'access arguments' => array('peppa api'),
+		'type' => MENU_CALLBACK
+	);
+	
+	// create our admin entry block
+	$items['admin/config/peppa'] = array(
+		'title' => 'Peppa REST API',
+		'description' => 'Adjust the main Peppa options.',
+		'position' => 'right',
+		'weight' => -5,
+		'page callback' => 'system_admin_menu_block_page',
+		'access arguments' => array('administer site configuration'),
+		'file' => 'system.admin.inc',
+		'file path' => drupal_get_path('module', 'system'),
+	);	
+	
+	// admin the authorised Peppa apps
+	$items['admin/config/peppa/apps'] = array(
+		'title' => 'Authorised Applications',
+		'description' => 'Maintain the list of authorised applications that have API access via Peppa.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('peppa_apps_form'),
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'peppa.apps.form.inc',
+	);	
+ 
+	// add new Application menu callback
+	$items['peppa/application/add'] = array(
+		'title' => 'Edit Application',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('peppa_apps_detail_form'),
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_CALLBACK,
+		'file' => 'peppa.apps.form.inc'
+	);
+ 
+ 	// Update Application menu callback
+	$items['peppa/application/update'] = array(
+		'title' => 'Add Application',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('peppa_apps_detail_form',3),
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_CALLBACK,
+		'file' => 'peppa.apps.form.inc'
+	);
+  
+ 	// Delete Application menu callback
+	$items['peppa/application/delete'] = array(
+		'title' => 'Remove Application',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('peppa_apps_delete_form',3),
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_CALLBACK,
+		'file' => 'peppa.apps.form.inc'
+	);
+
+	return $items;	
+}
+
+/**
+ * This is the API Request Handler for V1
+ */
+function peppa_api_request_v1(){
+	$api = new PeppaREST();
+	$api->handleRequest();
+}
+
+/**
+ * This is the API Request Handler for V2
+ */
+function peppa_api_request_v2(){
+	$api = new PeppaV2REST();
+	$api->handleRequest();
+}

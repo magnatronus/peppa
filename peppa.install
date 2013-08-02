@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * @file
+ * peppa install
+ * 
+ * @author: Stephen Rogers (srogers.uk@gmail.com) - www.spiralarm.co.uk @sarmcon
+ * 
+ * This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License.
+ * http://creativecommons.org/licenses/by-nc/3.0
+ * 
+ * 
+ */
+ 
+/**
+ * Implements hook_schema()
+ */
+function peppa_schema(){
+	
+	$schema = array(); 
+	  
+	// Peppa_Apps table  
+ 	$schema['peppa_apps'] = array(
+  		'description' => 'Stores the details about authorised Peppa apps',
+  		'fields' => array(
+    		'appid' => array(
+      			'type' => 'serial',
+      			'not null' => TRUE,
+    		),
+    		'name' => array(
+      			'type' => 'varchar',
+      			'length' => '255',
+      			'not null' => TRUE,
+    		),
+    		'apikey' => array(
+      			'type' => 'varchar',
+      			'length' => '32',
+      			'not null' => TRUE,
+    		),
+    		'created' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'status' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'info' => array(
+      			'type' => 'text',
+      			'not null' => TRUE,
+    		),
+  		),
+  		'primary key' => array('appid'),
+  		'unique keys' => array(
+    		'key' => array('apikey')
+  		),
+	);
+	
+	// Peppa_Object Table
+	$schema['peppa_object'] = array(
+  		'description' => 'Holds the JSON object data',
+  		'fields' => array(
+    		'oid' => array(
+      			'type' => 'varchar',
+      			'length' => '32',
+      			'not null' => TRUE,
+    		),
+    		'name' => array(
+      			'type' => 'varchar',
+      			'length' => '255',
+      			'not null' => TRUE,
+    		),
+    		'uid' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'created' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'updated' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'data' => array(
+      			'type' => 'text',
+      			'not null' => FALSE,
+    		),
+  		),
+  		'primary key' => array('oid'),
+  		'indexes' => array(
+    		'name' => array('name', 'uid'),
+  		),
+	);
+	
+	// Peppa_Session Table
+	$schema['peppa_session'] = array(
+  		'description' => 'Tracks the current Drupal user Peppa sessions',
+  		'fields' => array(
+    		'sid' => array(
+      			'type' => 'varchar',
+      			'length' => '32',
+      			'not null' => TRUE,
+    		),
+    		'uid' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'created' => array(
+      			'type' => 'int',
+      			'not null' => TRUE,
+    		),
+    		'apikey' => array(
+      			'type' => 'varchar',
+      			'length' => '32',
+      			'not null' => FALSE,
+    		),
+    		'lastcall' => array(
+      			'type' => 'int',
+      			'not null' => FALSE,
+    		),
+  		),
+  		'primary key' => array('sid'),
+  		'unique keys' => array(
+    			'userid' => array('uid')
+  		),
+	);
+		
+	return $schema;
+ 
+ }

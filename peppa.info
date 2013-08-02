@@ -1,0 +1,7 @@
+name = Peppa
+description = A simple module to provide Parse like functionality to a Drupal Site
+core = 7.x
+package = SpiralArm
+files[] = peppa.restapi.inc
+files[] = peppa.restapi.v2.inc
+version = 1.0.3
