@@ -207,6 +207,7 @@ class PeppaREST{
 	 * - Login
 	 * - Logout
 	 * - Create (this is restricted and can be turned off)
+	 * - Update (allows the user record to be updated - currently just a password change)
 	 */
 	private function user_handler($args){
 		
@@ -221,6 +222,10 @@ class PeppaREST{
 				$this->process_user_post();
 				break;
 				
+			case 'PUT':
+				$this->process_user_put();
+				break;
+
 			default:
 				watchdog('peppa', 'Bad User Request: %argone , Method: %method  with APIKey: %key', array('%argone' => $args[1],'%method'=>$_SERVER['REQUEST_METHOD'],'%key'=>$this->apikey), WATCHDOG_WARNING);							
 				drupal_add_http_header('Status', '400 Bad Request');
@@ -229,6 +234,48 @@ class PeppaREST{
 		
 	}
 	
+	
+	/**
+	 * Process our User PUT Request for this request we need to check for valid session id and current password match
+	 * - Password update
+	 */
+	private function process_user_put(){
+		
+		// check for a valid session ID - if not found deny access
+		$user = peppa_session_get_by_sid($this->sessionid);
+		if(!$user){
+			watchdog('peppa', 'Class API Call error - invalid or no session ID provided.', null, WATCHDOG_WARNING);							
+			drupal_add_http_header('Status', '403 Access Denied');
+			exit;			
+		}
+		
+		// now record the API call attempt time
+		peppa_session_update_lastcall($this->sessionid);
+		
+		// get our JSON payload and check current password is correct
+		$data = $this->get_json_data();
+
+		// we need the currrent Drupal user record to do the update
+		$account = user_load($user->uid);
+		if(!$account){
+			watchdog('peppa', 'Unable to load user for UID: %uid.', array('%uid'=>$user->uid), WATCHDOG_WARNING);							
+			drupal_add_http_header('Status', '403 Access Denied');
+			exit;						
+		}
+		
+		// Do our password update
+		$updated_user = user_save($account, array('pass'=>$data->pass));
+		if($user){				
+			$this->payload->success = true;
+			$this->payload->msg = 'User password updated.';
+		}
+		else{
+			$this->payload->success = false;
+			$this->payload->msg = 'Error updating the user password.';			
+		}
+		
+	}
+
 	
 	/**
 	 * Process our User POST request
@@ -301,8 +348,8 @@ class PeppaREST{
 				break;
 				
 			case false: // this is a login
-				$name = $_REQUEST['name'];
-				$password = $_REQUEST['pass'];
+				$name = trim($_REQUEST['name']);
+				$password = trim($_REQUEST['pass']);
 				$uid = user_authenticate($name, $password);
 				if($uid){
 					$result = $this->create_peppa_session($uid);
@@ -311,12 +358,13 @@ class PeppaREST{
 						$this->payload->success = true;	
 					}
 					else{
-						watchdog('peppa', 'User Login Error, Unable to create Peppa session for user : %userid  with APIKey: %key', array('%userid' => $uid,'%key'=>$this->apikey), WATCHDOG_ERROR);							
+						watchdog('peppa', 'User Login Error, Unable to create Peppa session for user : %userid  using APIKey: %key', array('%userid' => $uid,'%key'=>$this->apikey), WATCHDOG_ERROR);							
 						drupal_add_http_header('Status', '403 Forbidden');
 						exit;					
 					}
 				}
 				else{
+					watchdog('peppa', 'User Login Error, Unable to Authenticate user : %name  using APIKey: %key', array('%name' => $name,'%key'=>$this->apikey), WATCHDOG_ERROR);							
 					drupal_add_http_header('Status', '403 Forbidden');
 					exit;					
 				}			
